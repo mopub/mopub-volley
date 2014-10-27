@@ -24,18 +24,69 @@ buildscript {
 }
 
 apply plugin: 'com.android.library'
+import org.apache.tools.ant.filters.*
 
-repositories {
-    jcenter()
-}
-
-group = 'com.android.volley'
-version = '1.1.1-SNAPSHOT'
+// Custom properties for shading the library
+ext.tmp = "build/shadow"
+ext.buildTmp = tmp + "/src"
+ext.oldpkg = "com.android.volley"
+ext.newpkg = "shadow.com.android.volley"
 
 android {
     compileSdkVersion 25
-    buildToolsVersion = '25.0.2'
+    buildToolsVersion '25.0.2'
+
+    sourceSets {
+        defaultConfig {
+            testApplicationId 'com.android.volley.tests'
+        }
+
+        main {
+            assets.srcDirs = ['assets']
+            res.srcDirs = ['res']
+            aidl.srcDirs = ['src']
+            resources.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            java.srcDirs = [buildTmp]
+            manifest.srcFile 'AndroidManifest.xml'
+        }
+    }
 }
+
 
 apply from: 'rules.gradle'
 apply from: 'bintray.gradle'
+
+// Copy our source to a temporary directory and replace all package references.
+task renamePackages << {
+    ext.replaceFilter = new TokenFilter.ReplaceString()
+    replaceFilter.setFrom(oldpkg)
+    replaceFilter.setTo(newpkg)
+    copy {
+        from('src')
+        into(buildTmp)
+        filter(TokenFilter, addReplaceString: replaceFilter)
+    }
+}
+
+// Modify the java source compile to look for the renamed temporary source
+android.libraryVariants.all { variant ->
+    // Make sure we copy the packages into the tmp directory
+    variant.javaCompile.dependsOn renamePackages
+}
+
+// Create a task that creates a Jar of the library
+android.libraryVariants.all { variant ->
+  def name = variant.buildType.name
+  if (name.equals(com.android.builder.core.BuilderConstants.DEBUG)) {
+    return; // Skip debug builds.
+  }
+  def task = project.tasks.create "jar${name.capitalize()}", Jar
+  task.dependsOn variant.javaCompile
+  task.from variant.javaCompile.destinationDir
+  artifacts.add('archives', task);
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.12'
+}
