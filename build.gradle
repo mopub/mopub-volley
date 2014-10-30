@@ -30,7 +30,7 @@ import org.apache.tools.ant.filters.*
 ext.tmp = "build/shadow"
 ext.buildTmp = tmp + "/src"
 ext.oldpkg = "com.android.volley"
-ext.newpkg = "shadow.com.android.volley"
+ext.newpkg = "com.mopub.volley"
 
 android {
     compileSdkVersion 25
