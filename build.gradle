@@ -3,19 +3,26 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.8.+'
+        classpath 'com.android.tools.build:gradle:0.12.1+'
     }
 }
 
-apply plugin: 'android-library'
+apply plugin: 'com.android.library'
+import org.apache.tools.ant.filters.*
+
+// Custom properties for shadowing the library
+ext.tmp = "build/shadow"
+ext.buildTmp = tmp + "/src"
+ext.oldpkg = "com.android.volley"
+ext.newpkg = "com.mopub.volley"
 
 android {
     compileSdkVersion 19
-    buildToolsVersion = 19
+    buildToolsVersion '19.1.0'
 
     sourceSets {
         defaultConfig {
-            testPackageName 'com.android.volley.tests'
+            testApplicationId 'com.mopub.volley.tests'
         }
 
         main {
@@ -24,12 +31,49 @@ android {
             aidl.srcDirs         = ['src']
             resources.srcDirs    = ['src']
             renderscript.srcDirs = ['src']
-            java.srcDirs         = ['src']
+            // Compile java from the shadowed source location instead of the default.
+            java.srcDirs         = [buildTmp]
             manifest.srcFile 'AndroidManifest.xml'
-
         }
 
         instrumentTest.setRoot('tests')
         instrumentTest.java.srcDirs = ['tests/src']
     }
+}
+
+// This task copies all source files to a temporary directory and renames
+// all instances of the old package with the shadowed package name.
+task renamePackages << {
+    ext.replaceFilter = new TokenFilter.ReplaceString()
+    replaceFilter.setFrom(oldpkg)
+    replaceFilter.setTo(newpkg)
+    copy {
+        from('src')
+        into(buildTmp)
+        filter(TokenFilter, addReplaceString: replaceFilter)
+    }
+}
+
+// Add a dependency to the javaCompile task on the shadowed source
+// so that we can be sure the shadowed source is present.
+android.libraryVariants.all { variant ->
+    // Make sure we copy the packages into the tmp directory
+    variant.javaCompile.dependsOn renamePackages
+}
+
+// On every release variant of the library project, create a task that
+// produces a JAR of the compiled java.
+android.libraryVariants.all { variant ->
+  def name = variant.buildType.name
+  if (name.equals(com.android.builder.core.BuilderConstants.DEBUG)) {
+    return; // Skip debug builds.
+  }
+  def task = project.tasks.create "jar${name.capitalize()}", Jar
+  task.dependsOn variant.javaCompile
+  task.from variant.javaCompile.destinationDir
+  artifacts.add('archives', task);
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.12'
 }
