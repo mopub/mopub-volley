@@ -26,7 +26,7 @@ buildscript {
 apply plugin: 'com.android.library'
 import org.apache.tools.ant.filters.*
 
-// Custom properties for shading the library
+// Custom properties for shadowing the library
 ext.tmp = "build/shadow"
 ext.buildTmp = tmp + "/src"
 ext.oldpkg = "com.android.volley"
@@ -38,7 +38,7 @@ android {
 
     sourceSets {
         defaultConfig {
-            testApplicationId 'com.android.volley.tests'
+            testApplicationId 'com.mopub.volley.tests'
         }
 
         main {
@@ -47,17 +47,18 @@ android {
             aidl.srcDirs = ['src']
             resources.srcDirs = ['src']
             renderscript.srcDirs = ['src']
-            java.srcDirs = [buildTmp]
+            // Compile java from the shadowed source location instead of the default.
+            java.srcDirs         = [buildTmp]
             manifest.srcFile 'AndroidManifest.xml'
         }
     }
 }
 
-
 apply from: 'rules.gradle'
 apply from: 'bintray.gradle'
 
-// Copy our source to a temporary directory and replace all package references.
+// This task copies all source files to a temporary directory and renames
+// all instances of the old package with the shadowed package name.
 task renamePackages << {
     ext.replaceFilter = new TokenFilter.ReplaceString()
     replaceFilter.setFrom(oldpkg)
@@ -69,13 +70,15 @@ task renamePackages << {
     }
 }
 
-// Modify the java source compile to look for the renamed temporary source
+// Add a dependency to the javaCompile task on the shadowed source
+// so that we can be sure the shadowed source is present.
 android.libraryVariants.all { variant ->
     // Make sure we copy the packages into the tmp directory
     variant.javaCompile.dependsOn renamePackages
 }
 
-// Create a task that creates a Jar of the library
+// On every release variant of the library project, create a task that
+// produces a JAR of the compiled java.
 android.libraryVariants.all { variant ->
   def name = variant.buildType.name
   if (name.equals(com.android.builder.core.BuilderConstants.DEBUG)) {
