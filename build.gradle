@@ -1,13 +1,27 @@
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.12.1+'
+        classpath 'com.android.tools.build:gradle:1.0.1'
+        classpath 'com.github.dcendents:android-maven-plugin:1.2'
     }
 }
 
+plugins {
+    id "com.jfrog.bintray" version "1.0"
+}
+
+repositories {
+    jcenter()
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.1'
+}
+
 apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
 import org.apache.tools.ant.filters.*
 
 // Custom properties for shadowing the library
@@ -17,11 +31,16 @@ ext.oldpkg = "com.android.volley"
 ext.newpkg = "com.mopub.volley"
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion '19.1.0'
+    compileSdkVersion 21
+    buildToolsVersion '21.1.2'
 
     sourceSets {
         defaultConfig {
+            minSdkVersion 21
+            targetSdkVersion 21
+            versionCode 1
+            versionName "1.0"
+
             testApplicationId 'com.mopub.volley.tests'
         }
 
@@ -40,6 +59,12 @@ android {
         instrumentTest.java.srcDirs = ['tests/src']
     }
 }
+
+def siteUrl = 'https://github.com/mopub/mopub-volley'
+def gitUrl = 'https://github.com/mopub/mopub-volley.git'
+
+group = 'com.mopub.volley'
+version = '1.0.0'
 
 // This task copies all source files to a temporary directory and renames
 // all instances of the old package with the shadowed package name.
@@ -74,6 +99,81 @@ android.libraryVariants.all { variant ->
   artifacts.add('archives', task);
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '1.12'
+// Put your credentials (bintray.user, bintray.apikey) in your ~/.gradle/local.properties
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+
+    configurations = ['archives']
+    publish = true
+
+    pkg {
+        repo = 'mopub-volley'
+        userOrg = 'mopub'
+        name = project.name
+        desc = 'MoPub Volley'
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ['Apache-2.0']
+    }
+}
+
+install {
+    repositories.mavenInstaller {
+        pom {
+            project {
+                packaging 'jar'
+
+                name 'MoPub Volley'
+                url siteUrl
+
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id 'nathanshayefar'
+                        name 'Nathan Shayefar'
+                        email 'nshayefar@twitter.com'
+                    }
+                    developer {
+                        id 'joeblubaugh'
+                        name 'Joe Blubaugh'
+                        email 'joeblubaugh@twitter.com'
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
 }
