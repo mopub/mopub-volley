@@ -108,7 +108,7 @@ bintray {
     key = properties.getProperty("bintray.apikey")
 
     configurations = ['archives']
-    publish = true
+    publish = false
 
     pkg {
         repo = 'mopub-volley'
@@ -146,6 +146,11 @@ install {
                         id 'joeblubaugh'
                         name 'Joe Blubaugh'
                         email 'joeblubaugh@twitter.com'
+                    }
+                    developer {
+                        id 'guydotcom'
+                        name 'Steffan Chartrand'
+                        email 'schartrand@twitter.com'
                     }
                 }
                 scm {
