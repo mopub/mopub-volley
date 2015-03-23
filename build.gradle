@@ -1,3 +1,11 @@
+// NOTE: The only changes that belong in this file are the definitions
+// of tool versions (gradle plugin, compile SDK, build tools), so that
+// Volley can be built via gradle as a standalone project.
+//
+// Any other changes to the build config belong in rules.gradle, which
+// is used by projects that depend on Volley but define their own
+// tools versions across all dependencies to ensure a consistent build.
+
 buildscript {
     repositories {
         jcenter()
@@ -26,7 +34,7 @@ import org.apache.tools.ant.filters.*
 
 // Custom properties for shadowing the library
 ext.tmp = "build/shadow"
-ext.buildTmp = tmp + "/src"
+ext.buildTmp = tmp + "/src/"
 ext.oldpkg = "com.android.volley"
 ext.newpkg = "com.mopub.volley"
 
@@ -51,8 +59,8 @@ android {
             resources.srcDirs    = ['src']
             renderscript.srcDirs = ['src']
             // Compile java from the shadowed source location instead of the default.
-            java.srcDirs         = [buildTmp]
-            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs         = [[buildTmp, 'java'].join(File.separator)]
+            manifest.srcFile 'src/main/AndroidManifest.xml'
         }
 
         instrumentTest.setRoot('tests')
@@ -64,7 +72,7 @@ def siteUrl = 'https://github.com/mopub/mopub-volley'
 def gitUrl = 'https://github.com/mopub/mopub-volley.git'
 
 group = 'com.mopub.volley'
-version = '1.0.0'
+version = '1.1.0'
 
 // This task copies all source files to a temporary directory and renames
 // all instances of the old package with the shadowed package name.
@@ -73,7 +81,7 @@ task renamePackages << {
     replaceFilter.setFrom(oldpkg)
     replaceFilter.setTo(newpkg)
     copy {
-        from('src')
+        from('src/main')
         into(buildTmp)
         filter(TokenFilter, addReplaceString: replaceFilter)
     }
