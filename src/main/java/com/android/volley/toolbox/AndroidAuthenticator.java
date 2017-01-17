@@ -30,7 +30,7 @@ import android.os.Bundle;
  * tokens of a specified type for a specified account.
  */
 public class AndroidAuthenticator implements Authenticator {
-    private final Context mContext;
+    private final AccountManager mAccountManager;
     private final Account mAccount;
     private final String mAuthTokenType;
     private final boolean mNotifyAuthFailure;
@@ -54,7 +54,13 @@ public class AndroidAuthenticator implements Authenticator {
      */
     public AndroidAuthenticator(Context context, Account account, String authTokenType,
             boolean notifyAuthFailure) {
-        mContext = context;
+        this(AccountManager.get(context), account, authTokenType, notifyAuthFailure);
+    }
+
+    // Visible for testing. Allows injection of a mock AccountManager.
+    AndroidAuthenticator(AccountManager accountManager, Account account,
+            String authTokenType, boolean notifyAuthFailure) {
+        mAccountManager = accountManager;
         mAccount = account;
         mAuthTokenType = authTokenType;
         mNotifyAuthFailure = notifyAuthFailure;
@@ -67,12 +73,18 @@ public class AndroidAuthenticator implements Authenticator {
         return mAccount;
     }
 
+    /**
+     * Returns the Auth Token Type used by this authenticator.
+     */
+    public String getAuthTokenType() {
+        return mAuthTokenType;
+    }
+
     // TODO: Figure out what to do about notifyAuthFailure
     @SuppressWarnings("deprecation")
     @Override
     public String getAuthToken() throws AuthFailureError {
-        final AccountManager accountManager = AccountManager.get(mContext);
-        AccountManagerFuture<Bundle> future = accountManager.getAuthToken(mAccount,
+        AccountManagerFuture<Bundle> future = mAccountManager.getAuthToken(mAccount,
                 mAuthTokenType, mNotifyAuthFailure, null, null);
         Bundle result;
         try {
@@ -97,6 +109,6 @@ public class AndroidAuthenticator implements Authenticator {
 
     @Override
     public void invalidateAuthToken(String authToken) {
-        AccountManager.get(mContext).invalidateAuthToken(mAccount.type, authToken);
+        mAccountManager.invalidateAuthToken(mAccount.type, authToken);
     }
 }

@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +35,7 @@ public class DiskBasedCacheTest {
         Cache.Entry e = new Cache.Entry();
         e.data = new byte[8];
         e.serverDate = 1234567L;
+        e.lastModified = 13572468L;
         e.ttl = 9876543L;
         e.softTtl = 8765432L;
         e.etag = "etag";
@@ -48,6 +50,7 @@ public class DiskBasedCacheTest {
 
         assertEquals(first.key, second.key);
         assertEquals(first.serverDate, second.serverDate);
+        assertEquals(first.lastModified, second.lastModified);
         assertEquals(first.ttl, second.ttl);
         assertEquals(first.softTtl, second.softTtl);
         assertEquals(first.etag, second.etag);
@@ -120,5 +123,14 @@ public class DiskBasedCacheTest {
         assertEquals(DiskBasedCache.readStringStringMap(bais), twoThings);
         assertEquals(DiskBasedCache.readStringStringMap(bais), emptyKey);
         assertEquals(DiskBasedCache.readStringStringMap(bais), emptyValue);
+    }
+
+    @Test
+    public void publicMethods() throws Exception {
+        // Catch-all test to find API-breaking changes.
+        assertNotNull(DiskBasedCache.class.getConstructor(File.class, int.class));
+        assertNotNull(DiskBasedCache.class.getConstructor(File.class));
+
+        assertNotNull(DiskBasedCache.class.getMethod("getFileForKey", String.class));
     }
 }

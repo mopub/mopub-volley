@@ -1,11 +1,14 @@
 package com.android.volley.toolbox;
 
+import android.content.Context;
+import android.util.AttributeSet;
 import android.view.ViewGroup.LayoutParams;
+import android.widget.ImageView.ScaleType;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.RobolectricTestRunner;
 
 import static org.junit.Assert.*;
@@ -17,7 +20,7 @@ public class NetworkImageViewTest {
 
     @Before public void setUp() throws Exception {
         mMockImageLoader = new MockImageLoader();
-        mNIV = new NetworkImageView(Robolectric.application);
+        mNIV = new NetworkImageView(RuntimeEnvironment.application);
     }
 
     @Test public void setImageUrl_requestsImage() {
@@ -43,11 +46,24 @@ public class NetworkImageViewTest {
         public int lastMaxHeight;
 
         public ImageContainer get(String requestUrl, ImageListener imageListener, int maxWidth,
-                int maxHeight) {
+                int maxHeight, ScaleType scaleType) {
             lastRequestUrl = requestUrl;
             lastMaxWidth = maxWidth;
             lastMaxHeight = maxHeight;
             return null;
         }
+    }
+
+    @Test
+    public void publicMethods() throws Exception {
+        // Catch-all test to find API-breaking changes.
+        assertNotNull(NetworkImageView.class.getConstructor(Context.class));
+        assertNotNull(NetworkImageView.class.getConstructor(Context.class, AttributeSet.class));
+        assertNotNull(NetworkImageView.class.getConstructor(Context.class, AttributeSet.class,
+                int.class));
+
+        assertNotNull(NetworkImageView.class.getMethod("setImageUrl", String.class, ImageLoader.class));
+        assertNotNull(NetworkImageView.class.getMethod("setDefaultImageResId", int.class));
+        assertNotNull(NetworkImageView.class.getMethod("setErrorImageResId", int.class));
     }
 }
