@@ -32,7 +32,7 @@ repositories {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.1'
+    gradleVersion = '3.3'
 }
 
 apply plugin: 'com.android.library'
@@ -55,10 +55,10 @@ android {
 
     sourceSets {
         defaultConfig {
-            minSdkVersion 21
+            minSdkVersion 16
             targetSdkVersion 25
-            versionCode 1
-            versionName "1.0"
+            versionCode 2
+            versionName version
 
             testApplicationId 'com.mopub.volley.tests'
         }
