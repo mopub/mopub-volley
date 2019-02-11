@@ -40,7 +40,7 @@ repositories {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '3.3'
+    gradleVersion = '4.10.1'
 }
 
 apply plugin: 'com.android.library'
