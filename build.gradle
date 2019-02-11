@@ -17,9 +17,13 @@
 buildscript {
     repositories {
         jcenter()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath 'com.android.tools.build:gradle:3.3.0'
     }
 }
 
@@ -29,6 +33,10 @@ plugins {
 
 repositories {
     jcenter()
+    maven {
+        url 'https://maven.google.com/'
+        name 'Google'
+    }
 }
 
 task wrapper(type: Wrapper) {
@@ -45,23 +53,21 @@ ext.oldpkg = "com.android.volley"
 ext.newpkg = "com.mopub.volley"
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion '25.0.2'
-    useLibrary 'org.apache.http.legacy'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 28
+        versionCode 3
+        versionName version
+
+        testApplicationId 'com.mopub.volley.tests'
+
         consumerProguardFiles 'consumer-proguard-rules.pro'
     }
 
     sourceSets {
-        defaultConfig {
-            minSdkVersion 16
-            targetSdkVersion 25
-            versionCode 2
-            versionName version
-
-            testApplicationId 'com.mopub.volley.tests'
-        }
 
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -71,16 +77,20 @@ android {
             resources.srcDirs = ['src']
             renderscript.srcDirs = ['src']
             // Compile java from the shadowed source location instead of the default.
-            java.srcDirs         = [buildTmp]
+            java.srcDirs = [buildTmp]
         }
     }
+}
+
+dependencies {
+    implementation 'com.android.support:support-annotations:28.0.0'
 }
 
 def siteUrl = 'https://github.com/mopub/mopub-volley'
 def gitUrl = 'https://github.com/mopub/mopub-volley.git'
 
 group = 'com.mopub.volley'
-version = '2.0.0'
+version = '2.1.0'
 
 // This task copies all source files to a temporary directory and renames
 // all instances of the old package with the shadowed package name.
@@ -105,14 +115,14 @@ android.libraryVariants.all { variant ->
 // On every release variant of the library project, create a task that
 // produces a JAR of the compiled java.
 android.libraryVariants.all { variant ->
-  def name = variant.buildType.name
-  if (name.equals(com.android.builder.core.BuilderConstants.DEBUG)) {
-    return; // Skip debug builds.
-  }
-  def task = project.tasks.create "jar${name.capitalize()}", Jar
-  task.dependsOn variant.javaCompile
-  task.from variant.javaCompile.destinationDir
-  artifacts.add('archives', task);
+    def name = variant.buildType.name
+    if (name.equals(com.android.builder.core.BuilderConstants.DEBUG)) {
+        return; // Skip debug builds.
+    }
+    def task = project.tasks.create "jar${name.capitalize()}", Jar
+    task.dependsOn variant.javaCompile
+    task.from variant.javaCompile.destinationDir
+    artifacts.add('archives', task);
 }
 
 // Put your credentials (bintray.user, bintray.apikey) in your ~/.gradle/local.properties
@@ -144,7 +154,9 @@ task sourcesJar(type: Jar) {
 
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
+    configurations.implementation.setCanBeResolved(true)
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.implementation
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
