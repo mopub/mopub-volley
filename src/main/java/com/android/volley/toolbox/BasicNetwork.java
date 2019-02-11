@@ -46,7 +46,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-/** A network performing Volley requests over an {@link HttpStack}. */
+/** A network performing Volley requests over an {@link BaseHttpStack}. */
 public class BasicNetwork implements Network {
     protected static final boolean DEBUG = VolleyLog.DEBUG;
 
@@ -54,58 +54,26 @@ public class BasicNetwork implements Network {
 
     private static final int DEFAULT_POOL_SIZE = 4096;
 
-    /**
-     * @deprecated Should never have been exposed in the API. This field may be removed in a future
-     *     release of Volley.
-     */
-    @Deprecated protected final HttpStack mHttpStack;
-
     private final BaseHttpStack mBaseHttpStack;
 
     protected final ByteArrayPool mPool;
 
-    /**
-     * @param httpStack HTTP stack to be used
-     * @deprecated use {@link #BasicNetwork(BaseHttpStack)} instead to avoid depending on Apache
-     *     HTTP. This method may be removed in a future release of Volley.
-     */
-    @Deprecated
-    public BasicNetwork(HttpStack httpStack) {
+    /** @param baseHttpStack HTTP stack to be used */
+    public BasicNetwork(BaseHttpStack baseHttpStack) {
         // If a pool isn't passed in, then build a small default pool that will give us a lot of
         // benefit and not use too much memory.
-        this(httpStack, new ByteArrayPool(DEFAULT_POOL_SIZE));
+        this(baseHttpStack, new ByteArrayPool(DEFAULT_POOL_SIZE));
     }
 
     /**
-     * @param httpStack HTTP stack to be used
-     * @param pool a buffer pool that improves GC performance in copy operations
-     * @deprecated use {@link #BasicNetwork(BaseHttpStack, ByteArrayPool)} instead to avoid
-     *     depending on Apache HTTP. This method may be removed in a future release of Volley.
-     */
-    @Deprecated
-    public BasicNetwork(HttpStack httpStack, ByteArrayPool pool) {
-        mHttpStack = httpStack;
-        mBaseHttpStack = new AdaptedHttpStack(httpStack);
-        mPool = pool;
-    }
-
-    /** @param httpStack HTTP stack to be used */
-    public BasicNetwork(BaseHttpStack httpStack) {
-        // If a pool isn't passed in, then build a small default pool that will give us a lot of
-        // benefit and not use too much memory.
-        this(httpStack, new ByteArrayPool(DEFAULT_POOL_SIZE));
-    }
-
-    /**
-     * @param httpStack HTTP stack to be used
+     * @param baseHttpStack HTTP stack to be used
      * @param pool a buffer pool that improves GC performance in copy operations
      */
-    public BasicNetwork(BaseHttpStack httpStack, ByteArrayPool pool) {
-        mBaseHttpStack = httpStack;
+    public BasicNetwork(BaseHttpStack baseHttpStack, ByteArrayPool pool) {
         // Populate mHttpStack for backwards compatibility, since it is a protected field. However,
         // we won't use it directly here, so clients which don't access it directly won't need to
         // depend on Apache HTTP.
-        mHttpStack = httpStack;
+        mBaseHttpStack = baseHttpStack;
         mPool = pool;
     }
 

@@ -21,15 +21,7 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.Map;
 
-/** An HTTP stack abstraction. */
-@SuppressWarnings("deprecation") // for HttpStack
-public abstract class BaseHttpStack implements HttpStack {
-    @Override
-    public HttpResponse performRequest(Request<?> request, Map<String, String> additionalHeaders) throws IOException, AuthFailureError {
-        //STUB
-        return null;
-    }
-
+public abstract class BaseHttpStack {
     /**
      * Performs an HTTP request with the given parameters.
      *
