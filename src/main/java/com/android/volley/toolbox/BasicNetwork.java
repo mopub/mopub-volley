@@ -58,22 +58,22 @@ public class BasicNetwork implements Network {
 
     protected final ByteArrayPool mPool;
 
-    /** @param baseHttpStack HTTP stack to be used */
-    public BasicNetwork(BaseHttpStack baseHttpStack) {
+    /** @param httpStack HTTP stack to be used */
+    public BasicNetwork(BaseHttpStack httpStack) {
         // If a pool isn't passed in, then build a small default pool that will give us a lot of
         // benefit and not use too much memory.
-        this(baseHttpStack, new ByteArrayPool(DEFAULT_POOL_SIZE));
+        this(httpStack, new ByteArrayPool(DEFAULT_POOL_SIZE));
     }
 
     /**
-     * @param baseHttpStack HTTP stack to be used
+     * @param httpStack HTTP stack to be used
      * @param pool a buffer pool that improves GC performance in copy operations
      */
-    public BasicNetwork(BaseHttpStack baseHttpStack, ByteArrayPool pool) {
+    public BasicNetwork(BaseHttpStack httpStack, ByteArrayPool pool) {
         // Populate mHttpStack for backwards compatibility, since it is a protected field. However,
         // we won't use it directly here, so clients which don't access it directly won't need to
         // depend on Apache HTTP.
-        mBaseHttpStack = baseHttpStack;
+        mBaseHttpStack = httpStack;
         mPool = pool;
     }
 
