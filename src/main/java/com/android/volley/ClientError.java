@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package com.android.volley.toolbox;
+package com.android.volley;
 
-import com.android.volley.Request;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
+/**
+ * Indicates that the server responded with an error response indicating that the client has erred.
+ *
+ * <p>For backwards compatibility, extends ServerError which used to be thrown for all server
+ * errors, including 4xx error codes indicating a client error.
+ */
+@SuppressWarnings("serial")
+public class ClientError extends ServerError {
+    public ClientError(NetworkResponse networkResponse) {
+        super(networkResponse);
+    }
 
-import static org.junit.Assert.assertNotNull;
-
-@RunWith(RobolectricTestRunner.class)
-public class RequestFutureTest {
-
-    @Test
-    public void publicMethods() throws Exception {
-        // Catch-all test to find API-breaking changes.
-        assertNotNull(RequestFuture.class.getMethod("newFuture"));
-        assertNotNull(RequestFuture.class.getMethod("setRequest", Request.class));
+    public ClientError() {
+        super();
     }
 }

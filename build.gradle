@@ -5,21 +5,166 @@
 // Any other changes to the build config belong in rules.gradle, which
 // is used by projects that depend on Volley but define their own
 // tools versions across all dependencies to ensure a consistent build.
+//
+// Most users should just add this line to settings.gradle:
+//     include(":volley")
+//
+// If you have a more complicated Gradle setup you can choose to use
+// this instead:
+//     include(":volley")
+//     project(':volley').buildFileName = 'rules.gradle'
 
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.14.+'
+        classpath 'com.android.tools.build:gradle:3.3.0'
     }
+}
+
+plugins {
+    id "com.jfrog.bintray" version "1.0"
+}
+
+repositories {
+    jcenter()
+    maven {
+        url 'https://maven.google.com/'
+        name 'Google'
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.10.1'
 }
 
 apply plugin: 'com.android.library'
+import org.apache.tools.ant.filters.*
+
+// Custom properties for shadowing the library
+ext.tmp = "build/shadow"
+ext.buildTmp = tmp + "/src"
+ext.oldpkg = "com.android.volley"
+ext.newpkg = "com.mopub.volley"
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion = '21.1.0'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 28
+        versionCode 3
+        versionName version
+
+        testApplicationId 'com.mopub.volley.tests'
+
+        consumerProguardFiles 'consumer-proguard-rules.pro'
+    }
+
+    sourceSets {
+
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            assets.srcDirs = ['assets']
+            res.srcDirs = ['res']
+            aidl.srcDirs = ['src']
+            resources.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            // Compile java from the shadowed source location instead of the default.
+            java.srcDirs = [buildTmp]
+        }
+    }
 }
 
-apply from: 'rules.gradle'
+dependencies {
+    implementation 'com.android.support:support-annotations:28.0.0'
+}
+
+def siteUrl = 'https://github.com/mopub/mopub-volley'
+def gitUrl = 'https://github.com/mopub/mopub-volley.git'
+
+group = 'com.mopub.volley'
+version = '2.1.0'
+
+// This task copies all source files to a temporary directory and renames
+// all instances of the old package with the shadowed package name.
+task renamePackages << {
+    ext.replaceFilter = new TokenFilter.ReplaceString()
+    replaceFilter.setFrom(oldpkg)
+    replaceFilter.setTo(newpkg)
+    copy {
+        from('src')
+        into(buildTmp)
+        filter(TokenFilter, addReplaceString: replaceFilter)
+    }
+}
+
+// Add a dependency to the javaCompile task on the shadowed source
+// so that we can be sure the shadowed source is present.
+android.libraryVariants.all { variant ->
+    // Make sure we copy the packages into the tmp directory
+    variant.javaCompile.dependsOn renamePackages
+}
+
+// On every release variant of the library project, create a task that
+// produces a JAR of the compiled java.
+android.libraryVariants.all { variant ->
+    def name = variant.buildType.name
+    if (name.equals(com.android.builder.core.BuilderConstants.DEBUG)) {
+        return; // Skip debug builds.
+    }
+    def task = project.tasks.create "jar${name.capitalize()}", Jar
+    task.dependsOn variant.javaCompile
+    task.from variant.javaCompile.destinationDir
+    artifacts.add('archives', task);
+}
+
+// Put your credentials (bintray.user, bintray.apikey) in your ~/.gradle/local.properties
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+
+    configurations = ['archives']
+    publish = false
+
+    pkg {
+        repo = 'mopub-volley'
+        userOrg = 'mopub'
+        name = project.name
+        desc = 'MoPub Volley'
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ['Apache-2.0']
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    configurations.implementation.setCanBeResolved(true)
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.implementation
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
