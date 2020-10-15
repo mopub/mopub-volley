@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2017 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,33 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.android.volley.toolbox;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
-
-import org.apache.http.HttpResponse;
-
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.Map;
 
-/**
- * An HTTP stack abstraction.
- */
-public interface HttpStack {
+public abstract class BaseHttpStack {
     /**
      * Performs an HTTP request with the given parameters.
      *
      * <p>A GET request is sent if request.getPostBody() == null. A POST request is sent otherwise,
-     * and the Content-Type header is set to request.getPostBodyContentType().</p>
+     * and the Content-Type header is set to request.getPostBodyContentType().
      *
      * @param request the request to perform
-     * @param additionalHeaders additional headers to be sent together with
-     *         {@link Request#getHeaders()}
-     * @return the HTTP response
+     * @param additionalHeaders additional headers to be sent together with {@link
+     *     Request#getHeaders()}
+     * @return the {@link HttpResponse}
+     * @throws SocketTimeoutException if the request times out
+     * @throws IOException if another I/O error occurs during the request
+     * @throws AuthFailureError if an authentication failure occurs during the request
      */
-    public HttpResponse performRequest(Request<?> request, Map<String, String> additionalHeaders)
-        throws IOException, AuthFailureError;
-
+    public abstract HttpResponse executeRequest(
+            Request<?> request, Map<String, String> additionalHeaders)
+            throws IOException, AuthFailureError;
 }
